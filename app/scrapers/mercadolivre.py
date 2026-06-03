@@ -6,6 +6,10 @@ from loguru import logger
 
 from app.models.schemas import ScrapedProduct
 from app.scrapers.base import BaseScraper
+from app.scrapers.ml_national import (
+    card_text_suggests_international,
+    is_brazil_ml_href,
+)
 from app.utils.playwright import auto_scroll, parse_brl_price, parse_int_from_text
 from app.utils.retry import async_retry
 
@@ -62,7 +66,12 @@ class MercadoLivreScraper(BaseScraper):
                 if not href or not title:
                     continue
                 if self.config.filters.only_national_results:
-                    if ".com.ar" in href or "mercadolibre.com" in href:
+                    if not is_brazil_ml_href(href):
+                        continue
+                    card_text = (await item.inner_text()) or ""
+                    if card_text_suggests_international(card_text):
+                        continue
+                    if card_text_suggests_international(title):
                         continue
                 price_el = await item.query_selector(
                     ".andes-money-amount__fraction, span.price-tag-fraction"
@@ -127,5 +136,15 @@ class MercadoLivreScraper(BaseScraper):
                     )
                 )
         finally:
+            if len(products) == 0:
+                from app.utils.debug_agent_log import log_page_scrape_diagnostic
+
+                await log_page_scrape_diagnostic(
+                    page_obj,
+                    marketplace="mercadolivre",
+                    query=query,
+                    items_parsed=0,
+                    extra={"page_num": page},
+                )
             await page_obj.close()
         return products

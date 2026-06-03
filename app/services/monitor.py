@@ -7,6 +7,7 @@ from app.config.loader import AppConfig, load_app_config
 from app.config.settings import get_settings
 from app.database.repository import ProductRepository
 from app.database.session import get_session, init_db
+from app.normalization.relevance import is_relevant_product
 from app.normalization.title import normalize_title, should_ignore_title
 from app.scrapers.registry import create_scrapers
 from app.services.cycle_report import CycleTracker, log_cycle_summary
@@ -72,6 +73,23 @@ class PriceMonitorService:
                                     stats["rejected"] += 1
                                     batch_rejected += 1
                                     continue
+                                rel_price = (
+                                    None
+                                    if scraped.price_unknown
+                                    else scraped.total_price
+                                )
+                                if not is_relevant_product(
+                                    scraped.title,
+                                    self.config.product.relevance,
+                                    price=rel_price,
+                                ):
+                                    stats["rejected"] += 1
+                                    batch_rejected += 1
+                                    logger.debug(
+                                        "Irrelevant listing | title={}",
+                                        scraped.title[:70],
+                                    )
+                                    continue
                                 trust = calculate_trust_score(scraped, self.config)
                                 tracker.consider_seen(scraped, trust.score)
                                 if trust.rejected:
@@ -89,13 +107,20 @@ class PriceMonitorService:
                                 db_product, is_new = repo.upsert_product(
                                     scraped, normalized, trust.score
                                 )
-                                promotions = promo_svc.detect_promotions(
-                                    db_product, scraped, trust, is_new
-                                )
-                                repo.add_price_snapshot(db_product, scraped)
+                                if not scraped.price_unknown:
+                                    repo.add_price_snapshot(db_product, scraped)
                                 stats["saved"] += 1
                                 batch_saved += 1
-                                tracker.consider_saved(scraped, trust.score)
+                                if scraped.price_unknown or scraped.current_price <= 0:
+                                    tracker.consider_discovery(scraped, trust.score)
+                                else:
+                                    tracker.consider_saved(scraped, trust.score)
+                                if not scraped.price_unknown:
+                                    promotions = promo_svc.detect_promotions(
+                                        db_product, scraped, trust, is_new
+                                    )
+                                else:
+                                    promotions = []
                                 for promo in promotions:
                                     if repo.alert_already_sent(
                                         db_product.id, promo.alert_type

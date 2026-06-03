@@ -71,6 +71,72 @@ python main.py
 streamlit run app/dashboard/app.py
 ```
 
+## Shopee (login obrigatório)
+
+A Shopee bloqueia automação (erro de carregamento / captcha). Se o Chrome mostrar faixa amarela sobre flags da linha de comando, feche com **X** — são avisos do Chrome, não erro do projeto.
+
+Opções:
+
+```bash
+# Ajuda completa
+python -m app.cli shopee-help
+
+# A) Perfil do seu Chrome (feche o Chrome antes)
+python -m app.cli shopee-login --chrome-profile
+
+# B) Navegador isolado (se A falhar)
+python -m app.cli shopee-login
+
+# C) Importar sessão Playwright (exportada manualmente)
+python -m app.cli shopee-import-state caminho\storage_state.json
+
+python -m app.cli shopee-session
+```
+
+Sessão salva em `data/shopee_storage_state.json`. Export manual com Playwright:
+
+`npx playwright codegen https://shopee.com.br --save-storage=data/shopee_storage_state.json`
+
+Com `HEADLESS=false`, o Chrome abre **minimizado** na barra de tarefas (`BROWSER_START_MINIMIZED=true` no `.env`).
+
+**Preço real na Shopee:** busca **nativa** em shopee.com.br (API/intercept/DOM) antes de DuckDuckGo/Google. Navegador padrão: **Chrome** (`SHOPEE_BROWSER=chrome`). Sem Firefox instalado, o sistema cai para Chrome sozinho. CDP: `shopee-cdp-help` + `SHOPEE_CDP_URL`.
+
+Teste rápido após salvar sessão:
+
+```powershell
+python -m app.cli shopee-test -q "Nintendo Switch 2"
+python -m app.cli shopee-test-strategies -q "Nintendo Switch 2"
+python -m app.cli shopee-benchmark -q "Nintendo Switch 2"
+python -m app.cli shopee-benchmark-intercept -q "Nintendo Switch 2"
+playwright install firefox
+python -m app.cli shopee-test-firefox -q "Nintendo Switch 2"
+python -m app.cli shopee-test-firefox --with-cdp
+```
+
+`shopee-benchmark-intercept` testa só **network_intercept** com sessões do mais bot (1/10) ao CDP (10/10). Log: `data/shopee_intercept_benchmark.log`.
+
+`shopee-benchmark` testa ~20 combinações (CDP, Firefox, Brave, Chrome, DuckDuckGo, API…) e gera ranking em `data/shopee_benchmark_report.json`.
+
+Ordem da busca Shopee (`prefer_external_search_first: false` no YAML): **intercept API** → **HTML da busca Shopee** → **API direta** → só então DuckDuckGo/Bing/Google. Itens **sem estoque** da API são ignorados (`skip_out_of_stock: true`).
+
+Ou desative Shopee em `config/products.yaml`: `marketplaces.shopee: false` (só Mercado Livre).
+
+No **GitHub Actions** a Shopee costuma falhar — use ML localmente ou VPS com sessão salva.
+
+## Deploy
+
+| Onde | Shopee | Como |
+|------|--------|------|
+| PC Windows | CDP + intercept | `scripts\start-chrome-cdp.bat` |
+| Oracle VPS | CDP 24/7 + Docker | [docs/07-deploy-oracle-cdp.md](docs/07-deploy-oracle-cdp.md) |
+| GitHub Actions | Plano B (DDG) | `SHOPEE_FALLBACK_ONLY=true` no workflow |
+
+```bash
+# VPS (Ubuntu)
+sudo WORKDIR=$(pwd) bash deploy/oracle/install.sh
+docker compose -f docker-compose.yml -f docker-compose.vps.yml up -d
+```
+
 ## Docker
 
 ```bash

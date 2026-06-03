@@ -9,9 +9,17 @@
 ## Fluxo de filtro
 
 1. `should_ignore_title` — termos de acessórios do YAML
-2. `calculate_trust_score` — anti-golpe
-3. Rejeição se `score < trust.minimum_score_to_persist`
-4. Persistência em `products` + `price_history`
+2. `is_relevant_product` — exige Switch 2; remove jogos, Lite, Switch 1, peças (`product.relevance` no YAML)
+3. `calculate_trust_score` — anti-golpe
+4. Rejeição se `score < trust.minimum_score_to_persist`
+5. Persistência em `products` + `price_history`
+
+## Mercado Livre — só nacional
+
+Com `filters.only_national_results: true`:
+
+- URL precisa ser `mercadolivre.com.br` com id `MLB…`
+- Cards com “compra internacional”, “envio do exterior”, “versão americana”, etc. são ignorados
 
 ## Trust score
 

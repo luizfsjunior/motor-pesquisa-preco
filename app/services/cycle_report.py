@@ -25,6 +25,7 @@ class CycleTracker:
     lowest_seen: CycleLowestOffer | None = None
     lowest_below_cap: CycleLowestOffer | None = None
     candidates_below_cap: int = 0
+    discovery_offers: list[CycleLowestOffer] = field(default_factory=list)
 
     def record_attempt(
         self,
@@ -65,9 +66,21 @@ class CycleTracker:
         )
         logger.error("Scrape failed | marketplace={} | term='{}' | error={}", marketplace, term, exc)
 
+    def consider_discovery(self, scraped: ScrapedProduct, trust_score: int) -> None:
+        if not scraped.price_unknown:
+            return
+        offer = _offer_from_scraped(
+            scraped, trust_score, passed_filters=True, below_price_cap=False
+        )
+        seen_urls = {o.url for o in self.discovery_offers}
+        if offer.url not in seen_urls:
+            self.discovery_offers.append(offer)
+
     def consider_raw(self, scraped: ScrapedProduct) -> None:
         """Qualquer item do scrape abaixo do teto (ignora filtros/trust)."""
         if scraped.is_sponsored:
+            return
+        if scraped.price_unknown or scraped.total_price <= 0:
             return
         if scraped.total_price >= self.fallback_max_price:
             return
@@ -122,6 +135,7 @@ class CycleTracker:
             attempts_total=len(self.attempts),
             attempts_empty=sum(1 for a in self.attempts if a.raw_count == 0 and not a.error),
             attempts_failed=sum(1 for a in self.attempts if a.error),
+            discovery_links=list(self.discovery_offers[:8]),
         )
 
     def _pick_lowest_for_digest(

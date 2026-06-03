@@ -1,0 +1,20 @@
+[Unit]
+Description=Chrome CDP for Shopee price monitor
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=%USER%
+Group=%USER%
+WorkingDirectory=%WORKDIR%
+Environment=SHOPEE_CDP_PROFILE=%WORKDIR%/data/chrome_cdp_profile
+Environment=SHOPEE_CDP_PORT=9222
+ExecStart=%WORKDIR%/scripts/start-chrome-cdp.sh
+Restart=on-failure
+RestartSec=15
+# Evita OOM matar Chrome silenciosamente
+OOMScoreAdjust=-100
+
+[Install]
+WantedBy=multi-user.target

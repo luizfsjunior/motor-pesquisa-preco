@@ -36,6 +36,11 @@ jobs:
           LOG_LEVEL: INFO
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          # Plano B Shopee: DuckDuckGo + enrich (sem CDP no Actions)
+          SHOPEE_FALLBACK_ONLY: "true"
+          SHOPEE_CDP_URL: ""
+          SHOPEE_INTERACTIVE: "false"
+          SHOPEE_CDP_STRICT: "false"
         run: |
           python -m app.cli run-once 2>&1 | tee cycle.log
           echo "--- tail cycle.log ---"
@@ -48,6 +53,14 @@ jobs:
         with:
           name: cycle-log
           path: cycle.log
+          if-no-files-found: ignore
+
+      - name: Upload debug session log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-session-log
+          path: debug-a309ad.log
           if-no-files-found: ignore
 
       - name: Upload database artifact

@@ -1,4 +1,11 @@
 .env
+data/shopee_storage_state.json
+data/shopee_browser_profile/
+data/chrome_cdp_profile/
+data/shopee_*.log
+data/shopee_*_report.json
+data/shopee_intercept_benchmark.json
+debug-*.log
 __pycache__/
 *.py[cod]
 *.egg-info/

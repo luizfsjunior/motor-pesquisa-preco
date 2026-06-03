@@ -14,6 +14,43 @@ class PriceRangeConfig(BaseModel):
     max: float
 
 
+class ProductRelevanceConfig(BaseModel):
+    """Filtro de anúncios: foco em console Nintendo Switch 2."""
+
+    must_contain_any: list[str] = Field(
+        default_factory=lambda: ["switch 2", "switch ii"]
+    )
+    exclude_terms: list[str] = Field(default_factory=list)
+    console_keywords: list[str] = Field(
+        default_factory=lambda: [
+            "console",
+            "consola",
+            "system",
+            "nova geracao",
+            "nova geração",
+            "256gb",
+            "256 gb",
+        ]
+    )
+    min_console_price: float = Field(
+        default=2000.0,
+        description="Abaixo deste preço exige palavra-chave forte de console (evita jogos).",
+    )
+    game_markers: list[str] = Field(
+        default_factory=lambda: [
+            "jogo",
+            "game",
+            "midia fisica",
+            "mídia física",
+            "midia física",
+            "digital)",
+            "(digital",
+            "limited run",
+            "video game",
+        ]
+    )
+
+
 class ProductConfig(BaseModel):
     main_term: str
     search_terms: list[str]
@@ -21,6 +58,27 @@ class ProductConfig(BaseModel):
     normalization_rules: list[list[str]]
     expected_price_range: PriceRangeConfig
     suspicious_price_factor: float = 0.55
+    relevance: ProductRelevanceConfig = Field(default_factory=ProductRelevanceConfig)
+
+
+class ShopeeOptionsConfig(BaseModel):
+    """Alternativas quando API direta retorna 403 / captcha."""
+
+    prefer_external_search_first: bool = False
+    skip_out_of_stock: bool = True
+    use_clean_browser_for_external: bool = True
+    accept_discovery_without_price: bool = True
+    minimum_trust_score_discovery: int = 25
+    price_enrich_max_urls: int = 12
+    product_page_wait_until: str = "domcontentloaded"
+    google_site_fallback: bool = True
+    duckduckgo_site_fallback: bool = True
+    bing_site_fallback: bool = True
+    warmup_home: bool = False
+    watch_urls: list[str] = Field(
+        default_factory=list,
+        description="URLs de produto Shopee (-i.shop.item) para monitorar sem busca.",
+    )
 
 
 class MarketplacesConfig(BaseModel):
@@ -29,6 +87,7 @@ class MarketplacesConfig(BaseModel):
     google_shopping: bool = True
     amazon: bool = False
     kabum: bool = False
+    shopee_options: ShopeeOptionsConfig = Field(default_factory=ShopeeOptionsConfig)
 
     def enabled_keys(self) -> list[str]:
         mapping = {

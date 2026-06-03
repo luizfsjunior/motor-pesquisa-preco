@@ -23,6 +23,66 @@ product:
     - "suporte"
     - "estojo"
     - "bolsa"
+    - "reparo"
+    - "peça"
+    - "peca"
+    - "bq24193"
+    - "de carga"
+    - "ci bq"
+    - "virtual boy"
+    - "virtual"
+
+  relevance:
+    must_contain_any:
+      - "switch 2"
+      - "switch ii"
+    exclude_terms:
+      - "switch lite"
+      - "family computer"
+      - "mini weekly"
+      - "windjammers"
+      - "odyssey"
+      - "pokemon legends"
+      - "resident evil"
+      - "tears of"
+      - "zelda:"
+      - "super mario odyssey"
+      - "renewed"
+      - "nintendo switch switch 32"
+      - "versão americana"
+      - "versao americana"
+      - "version americana"
+      - "compra internacional"
+      - "importado"
+      - "virtual boy"
+      - "virtual"
+    min_console_price: 2000
+    console_keywords:
+      - "console"
+      - "consola"
+      - "system"
+      - "nova geracao"
+      - "nova geração"
+      - "256gb"
+      - "256 gb"
+    game_markers:
+      - "jogo"
+      - "game"
+      - "midia fisica"
+      - "mídia física"
+      - "digital)"
+      - "(digital"
+      - " digital"
+      - "+ dlc"
+      - "dlc)"
+      - "limited run"
+      - "video game"
+      - "edição"
+      - "edicao"
+      - "bananza"
+      - "donkey kong"
+      - "mario kart world"
+      - "kart world"
 
   normalization_rules:
     - ["switch2", "switch 2"]
@@ -31,7 +91,7 @@ product:
 
   expected_price_range:
     min: 2500
-    max: 4000
+    max: 6000
 
   suspicious_price_factor: 0.55
 
@@ -39,6 +99,20 @@ marketplaces:
   shopee: true
   mercadolivre: true
   google_shopping: true
+  # Shopee: busca nativa primeiro (search na Shopee); DDG/Bing/Google só se falhar
+  shopee_options:
+    prefer_external_search_first: false
+    skip_out_of_stock: true
+    use_clean_browser_for_external: true
+    accept_discovery_without_price: true
+    minimum_trust_score_discovery: 25
+    price_enrich_max_urls: 12
+    product_page_wait_until: domcontentloaded
+    duckduckgo_site_fallback: true
+    bing_site_fallback: true
+    google_site_fallback: true
+    warmup_home: false
+    watch_urls: []
   amazon: false
   kabum: false
 
@@ -53,7 +127,7 @@ alerts:
   notify_new_lowest_price: true
   notify_new_products: true
   # Resumo Telegram: menor preço entre itens coletados abaixo deste valor (mesmo se não passar filtros)
-  fallback_max_price: 6000
+  fallback_max_price: 4000
 
 scheduler:
   interval_minutes: 15

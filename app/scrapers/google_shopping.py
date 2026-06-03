@@ -91,6 +91,15 @@ class GoogleShoppingScraper(BaseScraper):
         except Exception as exc:
             logger.warning("Google Shopping degraded mode: {}", exc)
         finally:
+            if len(products) == 0:
+                from app.utils.debug_agent_log import log_page_scrape_diagnostic
+
+                await log_page_scrape_diagnostic(
+                    page,
+                    marketplace="google_shopping",
+                    query=query,
+                    items_parsed=0,
+                )
             await page.close()
         logger.bind(category="scraping").info(
             "Google Shopping returned {} items for '{}'", len(products), query

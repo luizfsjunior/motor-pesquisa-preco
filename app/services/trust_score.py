@@ -17,6 +17,14 @@ SUSPICIOUS_TERMS = [
 def calculate_trust_score(product: ScrapedProduct, config: AppConfig) -> TrustResult:
     score = 100
     reasons: list[str] = []
+    if product.price_unknown or product.total_price <= 0:
+        reasons.append("Preço não coletado (link discovery Shopee)")
+        score = 55
+        min_persist = config.marketplaces.shopee_options.minimum_trust_score_discovery
+        rejected = score < min_persist
+        level = TrustLevel.MEDIUM if score >= 45 else TrustLevel.LOW
+        return TrustResult(score=score, level=level, reasons=reasons, rejected=rejected)
+
     price = product.total_price
     pr = config.product.expected_price_range
     min_expected = pr.min

@@ -18,9 +18,11 @@ SCRAPER_CLASSES: dict[str, type[BaseScraper]] = {
 
 def create_scrapers(config: AppConfig, pw: PlaywrightManager | None = None) -> dict[str, BaseScraper]:
     shared_pw = pw or PlaywrightManager()
+    shopee_pw = PlaywrightManager(for_shopee=True)
     scrapers: dict[str, BaseScraper] = {}
     for key in config.marketplaces.enabled_keys():
         cls = SCRAPER_CLASSES.get(key)
         if cls:
-            scrapers[key] = cls(config, shared_pw)
+            browser = shopee_pw if key == "shopee" else shared_pw
+            scrapers[key] = cls(config, browser)
     return scrapers

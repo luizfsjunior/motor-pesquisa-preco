@@ -23,29 +23,22 @@ Workflow: `.github/workflows/price-monitor.yml`
 
 **Limitações:** 2000 min/mês no plano free; sem dashboard 24/7.
 
-## Oracle Cloud Always Free VPS
+## Oracle Cloud Always Free VPS (Chrome CDP 24/7)
 
-Melhor opção para Playwright 24/7 sem limite de minutos do Actions.
+Guia completo e scripts automatizados: **[07-deploy-oracle-cdp.md](07-deploy-oracle-cdp.md)**.
 
-### Passos resumidos
-
-1. Criar conta em [Oracle Cloud](https://www.oracle.com/cloud/free/)
-2. Criar VM **Ampere A1** (Always Free) — Ubuntu 22.04
-3. Abrir porta 8501 no Security List (se usar dashboard)
-4. SSH na VM:
+Resumo:
 
 ```bash
-sudo apt update && sudo apt install -y docker.io docker-compose-plugin git
-sudo usermod -aG docker $USER
-# relogar
-git clone <seu-repo> motor-pesquisa-preco
-cd motor-pesquisa-preco
-cp .env.example .env
-# editar .env com Telegram
-docker compose up -d --build
+git clone <seu-repo> motor-pesquisa-preco && cd motor-pesquisa-preco
+sudo WORKDIR=$(pwd) bash deploy/oracle/install.sh
+# copiar data/chrome_cdp_profile do PC ou login via VNC
+sudo systemctl start chrome-cdp
+cp deploy/oracle/env.vps.example .env   # editar Telegram
+docker compose -f docker-compose.yml -f docker-compose.vps.yml up -d
 ```
 
-5. Systemd (opcional) para reinício automático:
+5. Systemd (opcional) para reinício automático do Docker:
 
 ```ini
 # /etc/systemd/system/price-monitor.service

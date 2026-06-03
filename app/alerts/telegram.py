@@ -83,10 +83,36 @@ class TelegramAlertService(AlertSender):
                 timeout=15,
             )
             response.raise_for_status()
+            body = response.json()
+            # region agent log
+            from app.utils.debug_agent_log import agent_log
+
+            agent_log(
+                "telegram._post_message",
+                "telegram_api_response",
+                {
+                    "label": label,
+                    "ok": body.get("ok"),
+                    "message_id": (body.get("result") or {}).get("message_id"),
+                    "chat_id_suffix": str(self.settings.telegram_chat_id)[-4:],
+                },
+                "H1",
+            )
+            # endregion
             logger.info("Telegram message sent: {}", label)
             return True
         except Exception as exc:
             logger.error("Failed to send Telegram message ({}): {}", label, exc)
+            # region agent log
+            from app.utils.debug_agent_log import agent_log
+
+            agent_log(
+                "telegram._post_message",
+                "telegram_api_error",
+                {"label": label, "error": str(exc)},
+                "H1",
+            )
+            # endregion
             return False
 
     def _format_promotion_message(self, alert: PromotionAlert) -> str:
@@ -136,7 +162,30 @@ class TelegramAlertService(AlertSender):
             f"Confiança: {lowest.trust_score}/100\n"
             f"Loja: {lowest.store_name or 'Não informada'}\n\n"
             f"Link:\n{lowest.url}"
+            f"{self._discovery_block(digest)}"
         )
+
+    def _discovery_block(self, digest: CycleDigest) -> str:
+        if not digest.discovery_links:
+            return ""
+        priced = [o for o in digest.discovery_links if o.total_price > 0]
+        unpriced = [o for o in digest.discovery_links if o.total_price <= 0]
+        lines: list[str] = []
+        if priced:
+            lines.append("\n\n🛒 Shopee (com preço):")
+            for offer in priced[:5]:
+                lines.append(f"• {offer.title[:50]} — {self._format_brl(offer.total_price)}")
+                lines.append(f"  {offer.url}")
+        if unpriced:
+            lines.append("\n\n🔗 Shopee (sem preço automático):")
+            for offer in unpriced[:5]:
+                lines.append(f"• {offer.title[:55]}")
+                lines.append(f"  {offer.url}")
+            lines.append(
+                "\n💡 Para preço Shopee no bot: Chrome logado + "
+                "SHOPEE_CDP_URL (python -m app.cli shopee-cdp-help)"
+            )
+        return "\n".join(lines)
 
     def _format_all_filtered_message(self, digest: CycleDigest) -> str:
         mp_block = "\n".join(digest.marketplace_lines) or "  (nenhum)"
@@ -149,6 +198,7 @@ class TelegramAlertService(AlertSender):
             f"({self._format_brl(digest.fallback_max_price)}) ou passou nos filtros.\n"
             f"Ajuste `alerts.fallback_max_price` em `config/products.yaml`.\n\n"
             f"Por marketplace:\n{mp_block}"
+            f"{self._discovery_block(digest)}"
         )
 
     def _format_no_data_message(self, digest: CycleDigest) -> str:

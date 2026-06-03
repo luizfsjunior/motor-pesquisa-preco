@@ -25,6 +25,7 @@ class ScrapedProduct(BaseModel):
     url: str
     image_url: str | None = None
     is_sponsored: bool = False
+    price_unknown: bool = False
     collected_at: datetime = Field(default_factory=datetime.utcnow)
 
     @property
@@ -82,3 +83,4 @@ class CycleDigest(BaseModel):
     attempts_total: int = 0
     attempts_empty: int = 0
     attempts_failed: int = 0
+    discovery_links: list[CycleLowestOffer] = Field(default_factory=list)

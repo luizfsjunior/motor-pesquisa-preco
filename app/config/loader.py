@@ -52,6 +52,13 @@ class AlertsConfig(BaseModel):
     minimum_discount_percent: float = 10
     notify_new_lowest_price: bool = True
     notify_new_products: bool = True
+    """Menor preço no resumo Telegram: só ofertas com preço total abaixo deste valor (R$)."""
+    fallback_max_price: float | None = None
+
+    def effective_fallback_max_price(self, product: ProductConfig) -> float:
+        if self.fallback_max_price is not None:
+            return self.fallback_max_price
+        return product.expected_price_range.max
 
 
 class SchedulerConfig(BaseModel):

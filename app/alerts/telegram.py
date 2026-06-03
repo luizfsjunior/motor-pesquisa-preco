@@ -113,11 +113,16 @@ class TelegramAlertService(AlertSender):
     def _format_digest_message(self, digest: CycleDigest) -> str:
         lowest = digest.lowest
         assert lowest is not None
-        filter_note = (
-            "passou nos filtros do motor"
-            if digest.lowest_passed_filters
-            else "visto no scrape, mas não foi salvo (filtros/trust)"
-        )
+        if digest.lowest_passed_filters:
+            filter_note = "passou nos filtros do motor"
+        elif digest.lowest_below_cap:
+            cap = self._format_brl(digest.fallback_max_price)
+            filter_note = (
+                f"abaixo de {cap} (sem passar filtros/trust; "
+                f"{digest.candidates_below_cap} oferta(s) nesta faixa)"
+            )
+        else:
+            filter_note = "visto no scrape, mas não foi salvo (filtros/trust)"
         return (
             "📊 Resumo do ciclo (sem promoção)\n\n"
             f"Produto monitorado: {digest.main_term}\n"
@@ -140,8 +145,9 @@ class TelegramAlertService(AlertSender):
             f"Produto monitorado: {digest.main_term}\n"
             f"Coletados: {digest.scraped} | Salvos: 0 | Rejeitados: {digest.rejected}\n"
             f"Duração: {digest.elapsed_ms // 1000}s\n\n"
-            "Itens apareceram no scrape, mas nenhum passou nos filtros/trust.\n"
-            f"Ajuste `config/products.yaml` ou confira os logs.\n\n"
+            "Itens apareceram no scrape, mas nenhum ficou abaixo do teto "
+            f"({self._format_brl(digest.fallback_max_price)}) ou passou nos filtros.\n"
+            f"Ajuste `alerts.fallback_max_price` em `config/products.yaml`.\n\n"
             f"Por marketplace:\n{mp_block}"
         )
 

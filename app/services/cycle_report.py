@@ -18,10 +18,13 @@ class ScrapeAttempt:
 
 @dataclass
 class CycleTracker:
+    fallback_max_price: float
     attempts: list[ScrapeAttempt] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     lowest_saved: CycleLowestOffer | None = None
     lowest_seen: CycleLowestOffer | None = None
+    lowest_below_cap: CycleLowestOffer | None = None
+    candidates_below_cap: int = 0
 
     def record_attempt(
         self,
@@ -62,6 +65,25 @@ class CycleTracker:
         )
         logger.error("Scrape failed | marketplace={} | term='{}' | error={}", marketplace, term, exc)
 
+    def consider_raw(self, scraped: ScrapedProduct) -> None:
+        """Qualquer item do scrape abaixo do teto (ignora filtros/trust)."""
+        if scraped.is_sponsored:
+            return
+        if scraped.total_price >= self.fallback_max_price:
+            return
+        self.candidates_below_cap += 1
+        offer = _offer_from_scraped(
+            scraped,
+            trust_score=0,
+            passed_filters=False,
+            below_price_cap=True,
+        )
+        if (
+            self.lowest_below_cap is None
+            or offer.total_price < self.lowest_below_cap.total_price
+        ):
+            self.lowest_below_cap = offer
+
     def consider_seen(self, scraped: ScrapedProduct, trust_score: int) -> None:
         offer = _offer_from_scraped(scraped, trust_score, passed_filters=False)
         if self.lowest_seen is None or offer.total_price < self.lowest_seen.total_price:
@@ -82,7 +104,7 @@ class CycleTracker:
         alerts: int,
         elapsed_ms: int,
     ) -> CycleDigest:
-        lowest = self.lowest_saved or self.lowest_seen
+        lowest, passed, below_cap = self._pick_lowest_for_digest()
         return CycleDigest(
             main_term=main_term,
             scraped=scraped,
@@ -90,8 +112,11 @@ class CycleTracker:
             rejected=rejected,
             alerts=alerts,
             elapsed_ms=elapsed_ms,
+            fallback_max_price=self.fallback_max_price,
+            candidates_below_cap=self.candidates_below_cap,
             lowest=lowest,
-            lowest_passed_filters=self.lowest_saved is not None,
+            lowest_passed_filters=passed,
+            lowest_below_cap=below_cap,
             marketplace_lines=_marketplace_summary_lines(self.attempts),
             errors=list(self.errors),
             attempts_total=len(self.attempts),
@@ -99,12 +124,24 @@ class CycleTracker:
             attempts_failed=sum(1 for a in self.attempts if a.error),
         )
 
+    def _pick_lowest_for_digest(
+        self,
+    ) -> tuple[CycleLowestOffer | None, bool, bool]:
+        if self.lowest_saved:
+            return self.lowest_saved, True, False
+        if self.lowest_below_cap:
+            return self.lowest_below_cap, False, True
+        if self.lowest_seen:
+            return self.lowest_seen, False, False
+        return None, False, False
+
 
 def _offer_from_scraped(
     scraped: ScrapedProduct,
     trust_score: int,
     *,
     passed_filters: bool,
+    below_price_cap: bool = False,
 ) -> CycleLowestOffer:
     return CycleLowestOffer(
         title=scraped.title,
@@ -114,6 +151,7 @@ def _offer_from_scraped(
         url=scraped.url,
         trust_score=trust_score,
         passed_filters=passed_filters,
+        below_price_cap=below_price_cap,
     )
 
 
@@ -145,14 +183,20 @@ def log_cycle_summary(digest: CycleDigest, *, telegram_enabled: bool, digest_sen
         f"product={digest.main_term}",
         f"elapsed_ms={digest.elapsed_ms}",
         f"scraped={digest.scraped} saved={digest.saved} rejected={digest.rejected} alerts={digest.alerts}",
+        f"fallback_max_price={digest.fallback_max_price:.0f} candidates_below_cap={digest.candidates_below_cap}",
         f"searches={digest.attempts_total} empty={digest.attempts_empty} failed={digest.attempts_failed}",
         f"telegram_enabled={telegram_enabled} fallback_digest_sent={digest_sent}",
     ]
     lines.extend(f"  {line}" for line in digest.marketplace_lines)
     if digest.lowest:
-        filt = "saved" if digest.lowest_passed_filters else "seen_only"
+        if digest.lowest_passed_filters:
+            src = "saved"
+        elif digest.lowest_below_cap:
+            src = "below_cap"
+        else:
+            src = "seen_only"
         lines.append(
-            f"lowest_price[{filt}]={digest.lowest.total_price:.2f} "
+            f"lowest_price[{src}]={digest.lowest.total_price:.2f} "
             f"marketplace={digest.lowest.marketplace} title={digest.lowest.title[:60]!r}"
         )
     else:

@@ -31,7 +31,7 @@ product:
 
   expected_price_range:
     min: 2500
-    max: 6000
+    max: 4000
 
   suspicious_price_factor: 0.55
 
@@ -52,6 +52,8 @@ alerts:
   minimum_discount_percent: 10
   notify_new_lowest_price: true
   notify_new_products: true
+  # Resumo Telegram: menor preço entre itens coletados abaixo deste valor (mesmo se não passar filtros)
+  fallback_max_price: 6000
 
 scheduler:
   interval_minutes: 15

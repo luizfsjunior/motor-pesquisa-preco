@@ -62,6 +62,7 @@ class CycleLowestOffer(BaseModel):
     url: str
     trust_score: int = 0
     passed_filters: bool = True
+    below_price_cap: bool = False
 
 
 class CycleDigest(BaseModel):
@@ -71,8 +72,11 @@ class CycleDigest(BaseModel):
     rejected: int
     alerts: int
     elapsed_ms: int
+    fallback_max_price: float = 0.0
+    candidates_below_cap: int = 0
     lowest: CycleLowestOffer | None = None
     lowest_passed_filters: bool = False
+    lowest_below_cap: bool = False
     marketplace_lines: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
     attempts_total: int = 0

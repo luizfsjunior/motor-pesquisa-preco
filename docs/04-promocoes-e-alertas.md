@@ -23,8 +23,16 @@ Se **nenhum** alerta de promoção foi enviado no ciclo:
 
 | Situação | Telegram |
 |----------|----------|
-| Coletou produtos (`scraped` > 0) | Mensagem com **menor preço** do ciclo (salvo ou só visto nos filtros) |
+| Coletou produtos (`scraped` > 0) | **Menor preço** entre ofertas com preço total &lt; `alerts.fallback_max_price` (padrão: `expected_price_range.max`), mesmo sem passar filtros |
+| Salvos com promoção | Menor entre os que **passaram** nos filtros |
 | Nada coletado (`scraped` = 0) | Aviso **ciclo sem dados** + resumo por marketplace |
+
+Configure em `config/products.yaml`:
+
+```yaml
+alerts:
+  fallback_max_price: 6000  # só entra no resumo se preço total < este valor
+```
 
 Logs no Actions: bloco `========== CYCLE SUMMARY ==========` e artifact `cycle-log`.
 

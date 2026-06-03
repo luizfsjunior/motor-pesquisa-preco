@@ -36,7 +36,19 @@ jobs:
           LOG_LEVEL: INFO
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: python -m app.cli run-once
+        run: |
+          python -m app.cli run-once 2>&1 | tee cycle.log
+          echo "--- tail cycle.log ---"
+          tail -n 80 cycle.log
+          grep -E "CYCLE SUMMARY|Cycle collected zero|Telegram message sent|Scraper returned 0" cycle.log || true
+
+      - name: Upload cycle log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cycle-log
+          path: cycle.log
+          if-no-files-found: ignore
 
       - name: Upload database artifact
         uses: actions/upload-artifact@v4

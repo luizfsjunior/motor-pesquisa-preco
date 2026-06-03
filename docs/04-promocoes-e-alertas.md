@@ -17,6 +17,17 @@
 | `abnormal_drop` | Queda ≥ 25% em 24h |
 | `new_cheap_listing` | Produto novo abaixo do percentil 20 |
 
+## Resumo de ciclo (fallback)
+
+Se **nenhum** alerta de promoção foi enviado no ciclo:
+
+| Situação | Telegram |
+|----------|----------|
+| Coletou produtos (`scraped` > 0) | Mensagem com **menor preço** do ciclo (salvo ou só visto nos filtros) |
+| Nada coletado (`scraped` = 0) | Aviso **ciclo sem dados** + resumo por marketplace |
+
+Logs no Actions: bloco `========== CYCLE SUMMARY ==========` e artifact `cycle-log`.
+
 ## Telegram
 
 Configure `.env`:

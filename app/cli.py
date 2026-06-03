@@ -26,6 +26,10 @@ def run_once() -> None:
     service = PriceMonitorService()
     stats = asyncio.run(service.run_cycle())
     typer.echo(f"Cycle done: {stats}")
+    if stats.get("digest_sent"):
+        typer.echo("Telegram: fallback digest (menor preço ou aviso sem dados) enviado.")
+    elif stats.get("alerts"):
+        typer.echo("Telegram: alerta(s) de promoção enviado(s).")
 
 
 @app.command("export-csv")

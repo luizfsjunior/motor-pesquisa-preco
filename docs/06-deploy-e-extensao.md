@@ -18,7 +18,7 @@ Workflow: `.github/workflows/price-monitor.yml`
 2. Em **Settings → Secrets**, adicione:
    - `TELEGRAM_BOT_TOKEN`
    - `TELEGRAM_CHAT_ID`
-3. O workflow roda a cada 15 minutos e executa `run-once`
+3. O workflow roda a cada 2 horas e executa `run-once`
 4. O banco SQLite é cacheado entre runs via `actions/cache`
 
 **Limitações:** 2000 min/mês no plano free; sem dashboard 24/7.

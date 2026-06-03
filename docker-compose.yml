@@ -1,0 +1,25 @@
+services:
+  scheduler:
+    build: .
+    command: python main.py
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - ./config:/app/config
+      - ./exports:/app/exports
+    env_file:
+      - .env
+    restart: unless-stopped
+
+  dashboard:
+    build: .
+    command: streamlit run app/dashboard/app.py --server.port=8501 --server.address=0.0.0.0
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./config:/app/config
+      - ./exports:/app/exports
+    env_file:
+      - .env
+    restart: unless-stopped

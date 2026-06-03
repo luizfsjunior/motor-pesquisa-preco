@@ -1,0 +1,70 @@
+product:
+  main_term: "Nintendo Switch 2"
+
+  search_terms:
+    - "Nintendo Switch 2"
+    - "Nintendo Switch 2 OLED"
+    - "Nintendo Switch 2 Mario Kart Bundle"
+    - "Nintendo Switch 2 bundle"
+
+  ignored_terms:
+    - "case"
+    - "capa"
+    - "película"
+    - "pelicula"
+    - "skin"
+    - "adesivo"
+    - "grip"
+    - "dock"
+    - "shell"
+    - "carregador"
+    - "controle"
+    - "acessório"
+    - "suporte"
+    - "estojo"
+    - "bolsa"
+
+  normalization_rules:
+    - ["switch2", "switch 2"]
+    - ["oled", "OLED"]
+    - ["nintendo switch ii", "nintendo switch 2"]
+
+  expected_price_range:
+    min: 2500
+    max: 6000
+
+  suspicious_price_factor: 0.55
+
+marketplaces:
+  shopee: true
+  mercadolivre: true
+  google_shopping: true
+  amazon: false
+  kabum: false
+
+filters:
+  only_new_products: true
+  only_national_results: true
+  minimum_store_rating: 4.5
+  minimum_store_sales: 50
+
+alerts:
+  minimum_discount_percent: 10
+  notify_new_lowest_price: true
+  notify_new_products: true
+
+scheduler:
+  interval_minutes: 15
+
+scraping:
+  max_pages: 2
+  scroll_pause_ms: 800
+  request_timeout_ms: 30000
+
+trust:
+  minimum_score_to_alert: 40
+  minimum_score_to_persist: 30
+
+promotion:
+  abnormal_drop_percent: 25
+  history_days_for_average: 30

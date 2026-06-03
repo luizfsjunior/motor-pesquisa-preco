@@ -1,0 +1,11 @@
+.venv
+__pycache__
+.git
+.env
+logs/*.log
+data/*.db
+exports/*
+!.exports/.gitkeep
+.cursor
+*.md
+!README.md

@@ -1,0 +1,53 @@
+name: Price Monitor
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache database
+        uses: actions/cache@v4
+        with:
+          path: data/prices.db
+          key: prices-db-${{ github.ref_name }}
+          restore-keys: |
+            prices-db-
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium
+
+      - name: Run price monitor cycle
+        env:
+          HEADLESS: "true"
+          DATABASE_URL: sqlite:///data/prices.db
+          LOG_LEVEL: INFO
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python -m app.cli run-once
+
+      - name: Upload database artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: prices-db
+          path: data/prices.db
+          if-no-files-found: warn
+
+      - name: Upload exports
+        uses: actions/upload-artifact@v4
+        with:
+          name: exports
+          path: exports/
+          if-no-files-found: ignore

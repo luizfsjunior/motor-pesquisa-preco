@@ -108,7 +108,7 @@ Documentação detalhada por fase em `docs/01-fundacao.md` … `docs/06-deploy-e
 
 ## GitHub Actions
 
-Configure secrets `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID`. O workflow em `.github/workflows/price-monitor.yml` executa scraping a cada 2 horas.
+Configure secrets `TELEGRAM_BOT_TOKEN` e `TELEGRAM_CHAT_ID`. O workflow em `.github/workflows/price-monitor.yml` executa scraping a cada 4 horas.
 
 ## Hospedagem 24/7
 
